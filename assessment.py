@@ -302,7 +302,7 @@ def call_gemini(client, prompt, retries=5):
 # ───────────────── MCQ GENERATION ─────────────────
 def generate_mcqs(client, payload, role):
     prompt = f"""
-Generate MCQs for skill assessment. 1 question per skill
+Generate MCQs for skill assessment. 3 question per skill
 
 ROLE: {role}
 
