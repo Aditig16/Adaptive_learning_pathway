@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import re
 import time
 import random
 import difflib
@@ -32,6 +33,7 @@ SKILL_ALIASES = {
     "js": "JavaScript",
     "javascript": "JavaScript",
     "sql database": "SQL",
+    "jupyter notebook": "Jupyter",
     "structured query language": "SQL",
     "data visualisation": "Data Visualization",
     "data visualization": "Data Visualization",
@@ -61,8 +63,10 @@ def clean(v):
 def split_skill_cell(cell):
     if not cell:
         return []
-    return [x.strip() for x in str(cell).split(",") if x.strip()]
+    text = str(cell)
 
+    parts = [p.strip() for p in text.split(";") if p.strip()]
+    return parts
 
 
 def normalize_skill(s):
@@ -113,7 +117,6 @@ def flatten_user_skills(row_dict):
     return list(dict.fromkeys(cleaned))
 
 
-# ───────────────── LOAD USERS ─────────────────
 def load_users():
     wb = openpyxl.load_workbook(USER_FILE)
     ws = wb.active
@@ -136,7 +139,6 @@ def load_users():
     return users
 
 
-# ───────────────── LOAD ROLES ─────────────────
 def load_roles():
     wb = openpyxl.load_workbook(ROLE_FILE)
     ws = wb.active
@@ -168,7 +170,6 @@ def load_roles():
     return roles
 
 
-# ───────────────── ROLE MATCH ─────────────────
 def match_role(user_role, roles):
     if not user_role:
         return None
@@ -206,7 +207,6 @@ def parse_experience(exp):
     return 1
 
 
-# ───────────────── ALIGN SKILLS ─────────────────
 def align_skills(user_skills, role_data):
     if not role_data:
         return user_skills
@@ -237,7 +237,6 @@ def align_skills(user_skills, role_data):
     return aligned if aligned else user_skills
 
 
-# ───────────────── ROLE FILTER ─────────────────
 def filter_relevant_skills(user_skills, role_data):
     if not role_data:
         return user_skills
@@ -259,7 +258,6 @@ def filter_relevant_skills(user_skills, role_data):
     return list(dict.fromkeys(filtered))
 
 
-# ───────────────── DIFFICULTY MAP ─────────────────
 def build_difficulty_map(experience_level):
     if experience_level == 0:
         return ["easy"]          # only easy
@@ -270,7 +268,6 @@ def build_difficulty_map(experience_level):
     else:
         return ["easy", "medium", "hard"]
 
-# ───────────────── API CALL ─────────────────
 def call_gemini(client, prompt, retries=5):
     for model in MODEL_CANDIDATES:
         for i in range(retries):
@@ -299,10 +296,9 @@ def call_gemini(client, prompt, retries=5):
     return None
 
 
-# ───────────────── MCQ GENERATION ─────────────────
 def generate_mcqs(client, payload, role):
     prompt = f"""
-Generate MCQs for skill assessment. 3 question per skill
+Generate MCQs for skill assessment. 1 question per skill
 
 ROLE: {role}
 
@@ -345,7 +341,7 @@ def skill_gap(result):
                 "correct":0,
                 "total_questions":0
             }
-        score_per_skill[skill]["total_questions"] += 3
+        score_per_skill[skill]["total_questions"] += 1
         if user_answer.lower()==correct_answer.lower():
             score_per_skill[skill]["correct"]+=1
     
@@ -356,10 +352,84 @@ def calculate_percentage(scores):
     for skill, score in scores.items():
         correct = score["correct"]
         total = score["total_questions"]
-        percentage = (correct/total)*100
+
+        percentage = round((correct/total)*100,2)
         percent[skill]=percentage
     
     return percent
+def expand_skill(skill):
+    if not skill:
+        return []
+
+    skill = str(skill).strip()
+
+    skill = skill.replace("’", "'")
+    match = re.match(r"^(.*?)\((.*?)\)\s*$", skill)
+
+    if match:
+        parent = match.group(1).strip()
+        nested = [x.strip() for x in match.group(2).split(",") if x.strip()]
+
+        return [parent] + nested
+
+    if "(" in skill and ")" not in skill:
+        return [skill.strip()]   
+
+    if "," in skill:
+        return [x.strip() for x in skill.split(",") if x.strip()]
+
+    return [skill]
+
+def get_all_role_skills(role_data):
+    skills = []
+
+    for category in ["required", "preferred", "tools"]:
+        for skill in role_data.get(category, []):
+            skills.extend(expand_skill(skill))
+
+    return list(dict.fromkeys(skills))
+
+def normalize_for_match(s):
+    if not s:
+        return None
+    return normalize_skill(s).lower().strip()
+
+def find_missing_required_skills(user_skills, role_data):
+
+    if not role_data:
+        return []
+
+    user_skill_set = {
+    normalize_for_match(skill)
+    for skill in user_skills
+    if normalize_for_match(skill)
+    }
+
+    role_skills = get_all_role_skills(role_data)
+
+    missing = []
+
+    for skill in role_skills:
+
+        normalized = normalize_skill(skill)
+
+        if not normalized:
+            continue
+
+        role_skill_norm = normalize_for_match(skill)
+
+        if not role_skill_norm:
+            continue
+
+        matched = any(
+            role_skill_norm in user or user in role_skill_norm
+            for user in user_skill_set
+        )
+
+        if not matched:
+            missing.append(skill)
+            
+    return list(dict.fromkeys(missing))
                 
 def main():
     print("\n Adaptive Learning System\n")
@@ -390,7 +460,10 @@ def main():
     aligned = align_skills(user_skills, role_data)
 
     filtered_skills = filter_relevant_skills(aligned, role_data)
-
+    missing_required_skills = find_missing_required_skills(
+    user_skills,
+    role_data
+    )
     experience = parse_experience(
         user["raw_row"].get("Experience in Target Role")
     )
