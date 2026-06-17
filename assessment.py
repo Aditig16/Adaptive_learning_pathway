@@ -8,7 +8,7 @@ import openpyxl
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from fetch_content import content_generation
+#from fetch_content import content_generation
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -345,7 +345,7 @@ def skill_gap(result):
                 "correct":0,
                 "total_questions":0
             }
-        score_per_skill[skill]["total"]=+1
+        score_per_skill[skill]["total_questions"] += 3
         if user_answer.lower()==correct_answer.lower():
             score_per_skill[skill]["correct"]+=1
     
@@ -355,7 +355,7 @@ def calculate_percentage(scores):
     percent={}
     for skill, score in scores.items():
         correct = score["correct"]
-        total = score["total"]
+        total = score["total_questions"]
         percentage = (correct/total)*100
         percent[skill]=percentage
     
@@ -433,19 +433,19 @@ def main():
     
     with open("weak_skills.json", "w") as f:
         json.dump(skill_gap_computation, f, indent=2)
-    pathway_prompt = content_generation(user)
-    pathway=call_gemini(client, pathway_prompt)
-    print("*************************** PATHWAY *************************************")
-    print("timeline:", pathway['timeline_weeks'], 'weeks')
-    for content in pathway['learning_path']:
-        print("SKILL :-  \n",content['skill'])
-        print("REASON : - \n",content['reason'])
-        print("RESOURCE SUMMARY - \n", content['resource_summary'])
-        print("WEEKLY PLAN \n")
-        for week in content['weekly_plan']:
-            print("WEEK -", week['week'])
-            print("FOCUS - ", week['focus'])
-            print("TASKS - \n", week['TASK'])
+    #pathway_prompt = content_generation(user)
+    #pathway=call_gemini(client, pathway_prompt)
+    #print("*************************** PATHWAY *************************************")
+    #print("timeline:", pathway['timeline_weeks'], 'weeks')
+    #for content in pathway['learning_path']:
+    #    print("SKILL :-  \n",content['skill'])
+    #    print("REASON : - \n",content['reason'])
+    #    print("RESOURCE SUMMARY - \n", content['resource_summary'])
+    #    print("WEEKLY PLAN \n")
+    #    for week in content['weekly_plan']:
+    #        print("WEEK -", week['week'])
+    #        print("FOCUS - ", week['focus'])
+    #        print("TASKS - \n", week['TASK'])
 
 
 
