@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import json
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -86,3 +87,57 @@ def register_user(
     finally:
 
         conn.close()
+
+def save_assessment_result(
+    user_id,
+    report
+):
+
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO assessment_results
+        (
+            user_id,
+            skill_scores
+        )
+        VALUES (?,?)
+        """,
+        (
+            user_id,
+            json.dumps(report)
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
+
+def get_assessment_history(
+    user_id
+):
+
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            assessment_date,
+            skill_scores
+        FROM assessment_results
+        WHERE user_id = ?
+        ORDER BY assessment_date DESC
+        """,
+        (user_id,)
+    )
+
+    results = cursor.fetchall()
+
+    conn.close()
+
+    return results

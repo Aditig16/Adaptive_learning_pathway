@@ -41,6 +41,15 @@ CREATE TABLE IF NOT EXISTS users (
 )
 """)
 
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS assessment_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    assessment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    skill_scores TEXT
+)
+""")
+
 conn.commit()
 
 conn.close()
