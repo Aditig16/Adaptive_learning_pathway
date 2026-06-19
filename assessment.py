@@ -282,6 +282,7 @@ def call_gemini(client, prompt, retries=5):
                 return json.loads(resp.text)
 
             except Exception as e:
+                print("GEMINI ERROR:", e)
                 msg = str(e)
 
                 if "429" in msg or "503" in msg or "overloaded" in msg:

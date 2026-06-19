@@ -1,5 +1,7 @@
 import streamlit as st
 from login import (login_user, register_user, save_assessment_result, get_assessment_history)
+from fetch_content import content_generation
+from assessment import call_gemini
 
 from assessment import (
     load_roles,
@@ -548,7 +550,8 @@ if "assessment_questions" not in st.session_state:
     st.session_state.assessment_questions = None
 if "assessment_report" not in st.session_state:
     st.session_state.assessment_report = None
-
+if "roadmap" not in st.session_state:
+    st.session_state.roadmap = None
 
 # ── Shared nav bar ──
 def render_nav(show_user=None):
@@ -684,7 +687,7 @@ elif st.session_state.page == "assessment":
             )
 
     questions = st.session_state.assessment_questions
-    total     = len(questions["questions"])
+    total = len(questions["questions"])
 
     # Compute how many have been answered (for progress bar)
     answered = sum(
@@ -844,7 +847,43 @@ elif st.session_state.page == "report":
     a1, a2, a3 = st.columns([1.2, 1.2, 1])
     with a1:
         if st.button("Generate roadmap →"):
-            st.info("Roadmap generation coming soon — hang tight!")
+
+            with st.spinner(
+                "Generating roadmap..."
+            ):
+
+                roadmap_prompt = content_generation(
+                    {
+                        "target_role": user[4],
+                        "timelines": user[5]
+                    },
+                    st.session_state.assessment_report
+                )
+
+                client = genai.Client(
+                    api_key=os.getenv(
+                        "GEMINI_API_KEY"
+                    )
+                )
+
+                roadmap = call_gemini(
+                    client,
+                    roadmap_prompt
+                )
+
+                print("ROADMAP =", roadmap)
+
+                if roadmap is None:
+
+                    st.error(
+                        "Roadmap generation failed."
+                    )
+                    st.stop()
+                st.session_state.roadmap = roadmap
+
+                st.session_state.page = "roadmap"
+
+                st.rerun()
     with a2:
         st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
         if st.button("← Back to dashboard"):
@@ -860,7 +899,144 @@ elif st.session_state.page == "report":
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
+# ─────────────────────────────
+# ROADMAP
+# ─────────────────────────────
 
+elif st.session_state.page == "roadmap":
+
+    #roadmap = st.session_state.roadmap
+    roadmap = st.session_state.get(
+        "roadmap",
+        None
+    )
+
+    st.title(
+        "📚 Personalized Learning Roadmap"
+    )
+
+    if roadmap is None:
+
+        st.error(
+            "Roadmap generation failed."
+        )
+
+    else:
+
+        st.success(
+            f"{roadmap['timeline_weeks']} Week Learning Plan"
+        )
+
+        weeks = {}
+
+        for skill in roadmap["learning_path"]:
+
+            if "weekly_plan" not in skill:
+                continue
+
+            for week in skill["weekly_plan"]:
+
+                wk = week["week"]
+
+                if wk not in weeks:
+                    weeks[wk] = []
+
+                weeks[wk].append({
+                    "skill": skill["skill"],
+                    "focus": week["focus"],
+                    "tasks": week["TASK"]
+                })
+
+        for week_no in sorted(weeks.keys()):
+
+            st.markdown(
+                f"## 📅 Week {week_no}"
+            )
+
+            for item in weeks[week_no]:
+
+                st.subheader(
+                    item["skill"]
+                )
+
+                st.write(
+                    f"Focus: {item['focus']}"
+                )
+
+                for task in item["tasks"]:
+
+                    st.write(
+                        f"• {task}"
+                    )
+
+            st.markdown("---")
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+
+        if st.button(
+            "🔄 Retake Assessment"
+        ):
+
+            st.session_state.assessment_questions = None
+
+            st.session_state.assessment_report = None
+
+            st.session_state.page = "assessment"
+
+            st.rerun()
+
+    with c2:
+
+        if st.button(
+            "🏠 Back To Dashboard"
+        ):
+
+            st.session_state.page = "dashboard"
+
+            st.rerun()
+
+# ─────────────────────────────
+# JOB READY PAGE
+# ─────────────────────────────
+
+elif st.session_state.page == "job_ready":
+
+    st.balloons()
+
+    st.success(
+        "🎉 Congratulations!"
+    )
+
+    st.markdown(
+        """
+# You Are Job Ready
+
+You have successfully completed your learning pathway.
+
+Your assessment results indicate that you are ready to begin applying for roles.
+
+Recommended next steps:
+
+• Update your Resume
+
+• Build Projects
+
+• Apply for Jobs
+
+• Continue Advanced Learning
+"""
+    )
+
+    if st.button(
+        "🏠 Back To Dashboard"
+    ):
+
+        st.session_state.page = "dashboard"
+
+        st.rerun()
+        
 # ──────────────────────────────────────────────────────────────
 # DASHBOARD
 # ──────────────────────────────────────────────────────────────

@@ -12,7 +12,8 @@ youtube_api_key = os.getenv("YOUTUBE_API_KEY")
 youtube = build("youtube", "v3", developerKey=youtube_api_key)
 
 
-MAX_VIDEOS_PER_SKILL = 3
+#MAX_VIDEOS_PER_SKILL = 3
+MAX_VIDEOS_PER_SKILL = 1
 MAX_TITLE_LEN = 80
 MAX_DESC_LEN = 120
 TOKEN_LIMIT_SOFT = 12000
@@ -24,9 +25,13 @@ TIMELINE_MAP = {
     "< 1 months": 3,
     "1+ year": 24
 }
-def content_generation(user):
-    skills=load_skills()
-    weak_skills_score=calculate_weak_skills(skills)
+#def content_generation(user):
+#    skills=load_skills()
+#    weak_skills_score=calculate_weak_skills(skills)
+def content_generation(user, assessment_report):
+    weak_skills_score = calculate_weak_skills(
+        assessment_report
+    )
     roadmap={}
     for skill,score in weak_skills_score.items():
         videos = fetch_youtube_videos(skill)
@@ -37,11 +42,30 @@ def content_generation(user):
     prompt=build_prompt(user['target_role'],TIMELINE_MAP.get(str(user['timelines']).strip(), 8), roadmap)
     return prompt
     
+#def calculate_weak_skills(gap):
+#    weak_skills_scores={}
+#    for skill, score in gap.items():
+#        if(score<75):
+#            weak_skills_scores[skill]=score        
+#    return weak_skills_scores
+
 def calculate_weak_skills(gap):
-    weak_skills_scores={}
+
+    weak_skills_scores = {}
+
+    count = 0
+
     for skill, score in gap.items():
-        if(score<75):
-            weak_skills_scores[skill]=score        
+
+        if score < 75:
+
+            weak_skills_scores[skill] = score
+
+            count += 1
+
+            if count == 2:
+                break
+
     return weak_skills_scores
 
 def fetch_youtube_videos(skill,maxResults=3):
