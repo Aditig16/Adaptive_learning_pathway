@@ -141,3 +141,59 @@ def get_assessment_history(
     conn.close()
 
     return results
+
+def save_roadmap(
+    user_id,
+    roadmap
+):
+
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO roadmaps
+        (
+            user_id,
+            roadmap_json
+        )
+        VALUES (?,?)
+        """,
+        (
+            user_id,
+            json.dumps(roadmap)
+        )
+    )
+
+    conn.commit()
+
+    conn.close()
+
+def get_latest_roadmap(
+    user_id
+):
+
+    conn = sqlite3.connect(DB_PATH)
+
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        SELECT roadmap_json
+        FROM roadmaps
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (user_id,)
+    )
+
+    result = cursor.fetchone()
+
+    conn.close()
+
+    if result:
+        return json.loads(result[0])
+
+    return None

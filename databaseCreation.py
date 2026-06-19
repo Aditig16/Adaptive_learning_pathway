@@ -50,6 +50,16 @@ CREATE TABLE IF NOT EXISTS assessment_results (
 )
 """)
 
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS roadmaps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    roadmap_json TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
+
+
 conn.commit()
 
 conn.close()

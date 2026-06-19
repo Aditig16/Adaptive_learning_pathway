@@ -1,5 +1,5 @@
 import streamlit as st
-from login import (login_user, register_user, save_assessment_result, get_assessment_history)
+from login import (login_user, register_user, save_assessment_result, get_assessment_history, save_roadmap, get_latest_roadmap)
 from fetch_content import content_generation
 from assessment import call_gemini
 
@@ -879,7 +879,14 @@ elif st.session_state.page == "report":
                         "Roadmap generation failed."
                     )
                     st.stop()
+
                 st.session_state.roadmap = roadmap
+
+                # SAVE ROADMAP TO DATABASE
+                save_roadmap(
+                    user[0],
+                    roadmap
+                )
 
                 st.session_state.page = "roadmap"
 
@@ -1043,6 +1050,7 @@ Recommended next steps:
 else:
     user   = st.session_state.user
     history = get_assessment_history(user[0])
+    saved_roadmap = get_latest_roadmap(user[0])
     skills = [s.strip() for s in user[7].split(",") if s.strip()]
     tools  = []
     if len(user) > 8 and user[8]:
@@ -1190,9 +1198,24 @@ else:
     st.markdown("<div class='sp2'></div>", unsafe_allow_html=True)
     b1, b2, _ = st.columns([1, 1, 2])
     with b1:
-        if st.button("Start assessment →"):
-            st.session_state.page = "assessment"
-            st.rerun()
+
+        if saved_roadmap:
+
+            if st.button("View Roadmap →"):
+
+                st.session_state.roadmap = saved_roadmap
+
+                st.session_state.page = "roadmap"
+
+                st.rerun()
+
+        else:
+
+            if st.button("Start assessment →"):
+
+                st.session_state.page = "assessment"
+
+                st.rerun()
     with b2:
         st.markdown('<div class="danger-btn">', unsafe_allow_html=True)
         if st.button("Sign out"):
