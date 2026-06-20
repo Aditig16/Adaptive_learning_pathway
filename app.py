@@ -21,7 +21,7 @@ load_dotenv()
 # ---------- Page config ----------
 st.set_page_config(
     page_title="Pathwise · Adaptive Learning",
-    page_icon="🎓",
+    page_icon="P",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -29,415 +29,312 @@ st.set_page_config(
 # ---------- Global styles ----------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap');
-
-    /* ── Reset & Base ── */
+    /* Reset & base */
     #MainMenu, footer, header { visibility: hidden; }
     * { box-sizing: border-box; }
 
     .stApp {
-        background: #0c0e14;
-        color: #e8eaf0;
-        font-family: 'Inter', sans-serif;
+        background: #ffffff;
+        color: #2d3339;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    /* ── Layout shell ── */
+    /* Layout shell */
     .block-container {
         max-width: 1100px !important;
         padding: 0 2rem 4rem !important;
         margin: 0 auto;
     }
 
-    /* ── Top nav bar ── */
-    .nav-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1.4rem 0 1.2rem;
-        border-bottom: 1px solid rgba(255,255,255,0.07);
-        margin-bottom: 0;
-    }
-    .nav-logo {
-        font-family: 'DM Serif Display', serif;
-        font-size: 1.45rem;
-        color: #ffffff;
-        letter-spacing: -0.01em;
-    }
-    .nav-logo span { color: #6ee7b7; }
-    .nav-pill {
-        background: rgba(110,231,183,0.10);
-        color: #6ee7b7;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: .25rem .75rem;
-        border-radius: 20px;
-        border: 1px solid rgba(110,231,183,0.25);
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
+    /* Top nav */
+    .nav-divider {
+        height: 1px;
+        background: #e2e5e9;
+        margin: 0.5rem 0 2.25rem;
     }
 
-    /* ── Hero section ── */
+    /* Hero section */
     .hero-wrap {
-        padding: 5rem 0 3.5rem;
+        padding: 4rem 0 2.75rem;
         text-align: center;
-        position: relative;
-    }
-    .hero-eyebrow {
-        display: inline-block;
-        font-size: 0.78rem;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #6ee7b7;
-        margin-bottom: 1.25rem;
     }
     .hero-title {
-        font-family: 'DM Serif Display', serif;
-        font-size: 3.2rem;
-        line-height: 1.12;
-        color: #ffffff;
-        margin: 0 0 1.25rem;
-        letter-spacing: -0.02em;
-    }
-    .hero-title em {
-        color: #6ee7b7;
-        font-style: italic;
-    }
-    .hero-sub {
-        font-size: 1.05rem;
-        color: #94a3b8;
-        max-width: 500px;
-        margin: 0 auto 2.5rem;
-        line-height: 1.65;
-        font-weight: 400;
+        font-size: 2.1rem;
+        line-height: 1.3;
+        font-weight: 700;
+        color: #1f2328;
+        margin: 0;
+        letter-spacing: -0.01em;
     }
 
-    /* ── Auth card ── */
+    /* Auth form area (no card/box treatment, just plain fields) */
     .auth-card {
-        background: #13161e;
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 20px;
-        padding: 2.5rem 2.75rem;
-        max-width: 480px;
+        max-width: 420px;
         margin: 0 auto;
-        box-shadow: 0 24px 64px rgba(0,0,0,0.45);
     }
     .auth-card-title {
-        font-size: 1.35rem;
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #ffffff;
-        margin-bottom: .35rem;
+        color: #1f2328;
+        margin-bottom: .3rem;
     }
     .auth-card-sub {
         font-size: 0.88rem;
-        color: #64748b;
-        margin-bottom: 2rem;
-    }
-    .auth-divider {
-        display: flex;
-        align-items: center;
-        gap: .75rem;
-        margin: 1.5rem 0;
-        color: #334155;
-        font-size: 0.8rem;
-    }
-    .auth-divider::before, .auth-divider::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: rgba(255,255,255,0.07);
+        color: #57606a;
+        margin-bottom: 1.75rem;
     }
 
-    /* ── Form elements ── */
+    /* Form elements */
     .stTextInput > label, .stSelectbox > label {
-        color: #94a3b8 !important;
+        color: #57606a !important;
         font-size: 0.82rem !important;
-        font-weight: 500 !important;
-        letter-spacing: 0.02em !important;
-        text-transform: uppercase !important;
+        font-weight: 600 !important;
         margin-bottom: .3rem !important;
     }
     .stTextInput input {
-        background: #0c0e14 !important;
-        border: 1px solid rgba(255,255,255,0.10) !important;
-        border-radius: 10px !important;
-        color: #e8eaf0 !important;
+        background: #ffffff !important;
+        border: 1px solid #d8dee4 !important;
+        border-radius: 6px !important;
+        color: #1f2328 !important;
         font-size: 0.93rem !important;
-        padding: .65rem .9rem !important;
-        transition: border-color .2s !important;
+        padding: .55rem .8rem !important;
+        transition: border-color .15s !important;
     }
     .stTextInput input:focus {
-        border-color: #6ee7b7 !important;
-        box-shadow: 0 0 0 3px rgba(110,231,183,0.12) !important;
+        border-color: #2c5f8a !important;
+        box-shadow: 0 0 0 2px rgba(44,95,138,0.15) !important;
     }
-    .stTextInput input::placeholder { color: #475569 !important; }
+    .stTextInput input::placeholder { color: #9aa3ab !important; }
 
     .stSelectbox div[data-baseweb="select"] > div {
-        background: #0c0e14 !important;
-        border: 1px solid rgba(255,255,255,0.10) !important;
-        border-radius: 10px !important;
-        color: #e8eaf0 !important;
+        background: #ffffff !important;
+        border: 1px solid #d8dee4 !important;
+        border-radius: 6px !important;
+        color: #1f2328 !important;
         font-size: 0.93rem !important;
     }
 
-    /* ── Buttons ── */
+    /* Buttons */
     .stButton > button {
-        background: #6ee7b7;
-        color: #0c0e14;
+        background: #2c5f8a;
+        color: #ffffff;
         border: none;
-        border-radius: 10px;
-        padding: .65rem 1.4rem;
-        font-weight: 700;
+        border-radius: 6px;
+        padding: .6rem 1.3rem;
+        font-weight: 600;
         font-size: 0.9rem;
         width: 100%;
-        letter-spacing: 0.01em;
-        transition: background .15s ease, transform .12s ease, box-shadow .15s;
-        box-shadow: 0 4px 16px rgba(110,231,183,0.18);
+        transition: background .15s ease;
     }
     .stButton > button:hover {
-        background: #a7f3d0;
-        transform: translateY(-1px);
-        box-shadow: 0 8px 24px rgba(110,231,183,0.28);
-        color: #0c0e14;
+        background: #244d70;
+        color: #ffffff;
     }
-    .stButton > button:active { transform: translateY(0); }
+    .stButton > button:active { opacity: 0.9; }
+    .stButton > button p { color: inherit !important; }
 
     /* Secondary ghost button — wrap in .ghost-btn div */
     .ghost-btn .stButton > button {
-        background: transparent;
-        color: #94a3b8;
-        border: 1px solid rgba(255,255,255,0.12);
-        box-shadow: none;
+        background: #ffffff;
+        color: #1f2328;
+        border: 1px solid #d8dee4;
     }
     .ghost-btn .stButton > button:hover {
-        background: rgba(255,255,255,0.05);
-        color: #e8eaf0;
-        transform: none;
-        box-shadow: none;
+        background: #f2f4f6;
+        color: #1f2328;
     }
 
-    /* Danger ghost */
+    /* Danger ghost — wrap in .danger-btn div */
     .danger-btn .stButton > button {
-        background: transparent;
-        color: #f87171;
-        border: 1px solid rgba(248,113,113,0.25);
-        box-shadow: none;
+        background: #ffffff;
+        color: #b3261e;
+        border: 1px solid #e7b3ae;
     }
     .danger-btn .stButton > button:hover {
-        background: rgba(248,113,113,0.08);
-        color: #f87171;
-        transform: none;
-        box-shadow: none;
+        background: #fbeceb;
+        color: #b3261e;
     }
 
-    /* ── Radio tabs ── */
+    /* Radio tabs */
     .stRadio [data-testid="stHorizontalBlock"] {
-        background: #0c0e14;
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 10px;
-        padding: .3rem;
-        gap: .3rem !important;
+        background: #f2f4f6;
+        border: 1px solid #d8dee4;
+        border-radius: 6px;
+        padding: .25rem;
+        gap: .25rem !important;
     }
     .stRadio label {
         background: transparent;
-        border-radius: 8px;
-        padding: .45rem 1rem;
+        border-radius: 5px;
+        padding: .42rem .9rem;
         font-size: 0.88rem !important;
         font-weight: 500 !important;
-        color: #64748b !important;
+        color: #57606a !important;
         transition: all .15s;
         text-transform: none !important;
         letter-spacing: 0 !important;
     }
     .stRadio label[data-selected="true"], .stRadio input:checked + label {
-        background: #6ee7b7 !important;
-        color: #0c0e14 !important;
+        background: #2c5f8a !important;
+        color: #ffffff !important;
     }
 
-    /* ── Dashboard layout ── */
+    /* Dashboard layout */
     .dashboard-header {
-        padding: 3rem 0 2rem;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        margin-bottom: 2.5rem;
+        padding: 1.5rem 0 1.75rem;
+        border-bottom: 1px solid #e2e5e9;
+        margin-bottom: 2.25rem;
     }
     .greeting-eyebrow {
-        font-size: 0.78rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        color: #6ee7b7;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        margin-bottom: .5rem;
+        color: #2c5f8a;
+        margin-bottom: .4rem;
     }
     .greeting-title {
-        font-family: 'DM Serif Display', serif;
-        font-size: 2.4rem;
-        color: #ffffff;
-        margin: 0 0 .4rem;
-        letter-spacing: -0.02em;
+        font-size: 1.9rem;
+        font-weight: 700;
+        color: #1f2328;
+        margin: 0 0 .35rem;
+        letter-spacing: -0.01em;
     }
     .greeting-sub {
         font-size: 0.92rem;
-        color: #64748b;
+        color: #57606a;
     }
 
-    /* ── Stat cards ── */
+    /* Stat cards */
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         gap: 1rem;
-        margin-bottom: 2.5rem;
+        margin-bottom: 2.25rem;
     }
     .stat-card {
-        background: #13161e;
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 14px;
-        padding: 1.35rem 1.4rem;
-        position: relative;
-        overflow: hidden;
-    }
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, #6ee7b7, transparent);
+        background: #fafbfc;
+        border: 1px solid #e2e5e9;
+        border-radius: 8px;
+        padding: 1.2rem 1.3rem;
     }
     .stat-label {
-        font-size: 0.75rem;
-        color: #64748b;
+        font-size: 0.74rem;
+        color: #57606a;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.04em;
         font-weight: 600;
-        margin-bottom: .5rem;
+        margin-bottom: .4rem;
     }
     .stat-value {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         font-weight: 700;
-        color: #ffffff;
-        letter-spacing: -0.02em;
+        color: #1f2328;
     }
 
-    /* ── Section headers ── */
+    /* Section headers */
     .section-hd {
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin: 2rem 0 1rem;
-        display: flex;
-        align-items: center;
-        gap: .6rem;
-    }
-    .section-hd::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: rgba(255,255,255,0.06);
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1f2328;
+        margin: 1.9rem 0 0.9rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e2e5e9;
     }
 
-    /* ── Skill chips ── */
+    /* Skill chips */
     .chip-wrap { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .5rem; }
     .chip {
-        background: rgba(110,231,183,0.08);
-        color: #6ee7b7;
-        border: 1px solid rgba(110,231,183,0.18);
-        border-radius: 8px;
+        background: #eef3f7;
+        color: #2c5f8a;
+        border: 1px solid #c9dbe8;
+        border-radius: 5px;
         font-size: 0.82rem;
         font-weight: 500;
-        padding: .3rem .75rem;
+        padding: .28rem .7rem;
         letter-spacing: 0.01em;
     }
     .chip.tool {
-        background: rgba(139,92,246,0.08);
-        color: #c4b5fd;
-        border-color: rgba(139,92,246,0.2);
+        background: #f1edf7;
+        color: #6b4fa0;
+        border-color: #d9cdec;
     }
 
-    /* ── Action cards (CTA area) ── */
+    /* Action cards (CTA area) */
     .cta-row {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 1rem;
-        margin-top: 2.5rem;
+        margin-top: 1.5rem;
     }
     .cta-card {
-        background: #13161e;
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 16px;
-        padding: 1.75rem;
-        cursor: pointer;
-        transition: border-color .2s, background .2s;
+        background: #ffffff;
+        border: 1px solid #d8dee4;
+        border-radius: 8px;
+        padding: 1.5rem 1.6rem;
+        transition: border-color .15s;
     }
     .cta-card:hover {
-        border-color: rgba(110,231,183,0.3);
-        background: #15192300;
-    }
-    .cta-card-icon {
-        font-size: 1.6rem;
-        margin-bottom: .85rem;
-        display: block;
+        border-color: #2c5f8a;
     }
     .cta-card-title {
         font-size: 1rem;
         font-weight: 700;
-        color: #ffffff;
+        color: #1f2328;
         margin-bottom: .35rem;
     }
     .cta-card-desc {
         font-size: 0.85rem;
-        color: #64748b;
+        color: #57606a;
         line-height: 1.55;
     }
 
-    /* ── Assessment page ── */
+    /* Assessment page */
     .assessment-header {
-        padding: 2.5rem 0 2rem;
+        padding: 1.5rem 0 1.75rem;
     }
     .progress-bar-wrap {
-        background: rgba(255,255,255,0.06);
+        background: #e2e5e9;
         border-radius: 99px;
-        height: 5px;
-        margin-bottom: 2.5rem;
+        height: 6px;
+        margin-bottom: 2.25rem;
         overflow: hidden;
     }
     .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #6ee7b7, #34d399);
+        background: #2c5f8a;
         border-radius: 99px;
         transition: width .4s ease;
     }
 
     .question-card {
-        background: #13161e;
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 16px;
-        padding: 1.75rem 1.9rem;
-        margin-bottom: 1.1rem;
+        background: #fafbfc;
+        border: 1px solid #e2e5e9;
+        border-radius: 8px;
+        padding: 1.5rem 1.6rem;
+        margin-bottom: 1rem;
     }
     .q-number {
         font-size: 0.72rem;
         font-weight: 700;
-        color: #6ee7b7;
+        color: #2c5f8a;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: .65rem;
+        letter-spacing: 0.06em;
+        margin-bottom: .55rem;
     }
     .q-text {
         font-size: 0.97rem;
         font-weight: 600;
-        color: #e8eaf0;
-        line-height: 1.55;
-        margin-bottom: 1.1rem;
+        color: #1f2328;
+        line-height: 1.5;
+        margin-bottom: 1rem;
     }
     .stRadio > label { display: none; }
     div[role="radiogroup"] label {
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 9px;
-        padding: .65rem .9rem;
-        margin-bottom: .4rem;
-        color: #94a3b8 !important;
+        background: #ffffff;
+        border: 1px solid #d8dee4;
+        border-radius: 6px;
+        padding: .6rem .85rem;
+        margin-bottom: .35rem;
+        color: #2d3339 !important;
         font-size: 0.9rem !important;
         font-weight: 400 !important;
         transition: border-color .15s, background .15s;
@@ -445,33 +342,33 @@ st.markdown("""
         letter-spacing: 0 !important;
     }
     div[role="radiogroup"] label:hover {
-        border-color: rgba(110,231,183,0.3);
-        background: rgba(110,231,183,0.05);
-        color: #e8eaf0 !important;
+        border-color: #2c5f8a;
+        background: #f2f6f9;
+        color: #1f2328 !important;
     }
 
-    /* ── Report page ── */
+    /* Report page */
     .report-header {
-        padding: 2.5rem 0 2rem;
+        padding: 1.5rem 0 1.75rem;
     }
     .score-summary {
         display: flex;
         gap: 2rem;
         align-items: center;
-        background: #13161e;
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 16px;
-        padding: 1.75rem 2rem;
-        margin-bottom: 2rem;
+        background: #fafbfc;
+        border: 1px solid #e2e5e9;
+        border-radius: 8px;
+        padding: 1.5rem 1.75rem;
+        margin-bottom: 1.75rem;
     }
     .score-big {
-        font-family: 'DM Serif Display', serif;
-        font-size: 3.5rem;
-        color: #6ee7b7;
+        font-size: 2.6rem;
+        font-weight: 700;
+        color: #2c5f8a;
         line-height: 1;
-        letter-spacing: -0.03em;
+        letter-spacing: -0.01em;
     }
-    .score-label { font-size: 0.85rem; color: #64748b; margin-top: .3rem; }
+    .score-label { font-size: 0.85rem; color: #57606a; margin-top: .3rem; }
 
     .skill-row {
         margin-bottom: 1rem;
@@ -480,23 +377,23 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: .45rem;
+        margin-bottom: .4rem;
     }
-    .skill-name { font-size: 0.9rem; color: #cbd5e1; font-weight: 500; }
+    .skill-name { font-size: 0.9rem; color: #2d3339; font-weight: 500; }
     .skill-pct  { font-size: 0.88rem; font-weight: 700; }
-    .skill-pct.good   { color: #6ee7b7; }
-    .skill-pct.warn   { color: #fbbf24; }
-    .skill-pct.danger { color: #f87171; }
+    .skill-pct.good   { color: #2f7a3c; }
+    .skill-pct.warn   { color: #a15c07; }
+    .skill-pct.danger { color: #b3261e; }
     .skill-track {
-        background: rgba(255,255,255,0.06);
+        background: #e2e5e9;
         border-radius: 99px;
-        height: 5px;
+        height: 6px;
         overflow: hidden;
     }
     .skill-fill { height: 100%; border-radius: 99px; }
-    .fill-good   { background: linear-gradient(90deg, #6ee7b7, #34d399); }
-    .fill-warn   { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
-    .fill-danger { background: linear-gradient(90deg, #f87171, #ef4444); }
+    .fill-good   { background: #2f7a3c; }
+    .fill-warn   { background: #a15c07; }
+    .fill-danger { background: #b3261e; }
 
     .result-badge {
         display: inline-flex;
@@ -504,39 +401,39 @@ st.markdown("""
         gap: .35rem;
         font-size: 0.8rem;
         font-weight: 600;
-        padding: .3rem .8rem;
-        border-radius: 99px;
+        padding: .28rem .75rem;
+        border-radius: 5px;
     }
-    .badge-strong { background: rgba(110,231,183,0.12); color: #6ee7b7; border: 1px solid rgba(110,231,183,0.22); }
-    .badge-weak   { background: rgba(251,191,36,0.10); color: #fbbf24; border: 1px solid rgba(251,191,36,0.22); }
+    .badge-strong { background: #eaf5ec; color: #2f7a3c; border: 1px solid #bfe2c5; }
+    .badge-weak   { background: #faf1e2; color: #a15c07; border: 1px solid #ecd6ab; }
 
-    /* ── Progress overrides ── */
+    /* Progress overrides */
     .stProgress { display: none !important; }
 
-    /* ── Metric overrides (hide native, we use custom) ── */
+    /* Metric overrides (hide native, we use custom) */
     div[data-testid="stMetric"] { display: none !important; }
 
-    /* ── Spinner ── */
-    .stSpinner > div { border-top-color: #6ee7b7 !important; }
-    .stSpinner p { color: #64748b !important; font-size: 0.88rem !important; }
+    /* Spinner */
+    .stSpinner > div { border-top-color: #2c5f8a !important; }
+    .stSpinner p { color: #57606a !important; font-size: 0.88rem !important; }
 
-    /* ── Alerts ── */
+    /* Alerts */
     .stAlert {
-        background: rgba(110,231,183,0.07) !important;
-        border: 1px solid rgba(110,231,183,0.2) !important;
-        border-radius: 10px !important;
-        color: #6ee7b7 !important;
+        background: #eef3f7 !important;
+        border: 1px solid #c9dbe8 !important;
+        border-radius: 6px !important;
+        color: #1f2328 !important;
     }
-    .stSuccess { background: rgba(110,231,183,0.07) !important; border: 1px solid rgba(110,231,183,0.2) !important; border-radius: 10px !important; }
-    .stError   { background: rgba(248,113,113,0.07) !important; border: 1px solid rgba(248,113,113,0.2) !important; border-radius: 10px !important; }
-    .stSuccess p, .stError p { font-size: 0.88rem !important; }
+    .stSuccess { background: #eaf5ec !important; border: 1px solid #bfe2c5 !important; border-radius: 6px !important; }
+    .stError   { background: #fbeceb !important; border: 1px solid #e7b3ae !important; border-radius: 6px !important; }
+    .stSuccess p, .stError p, .stAlert p { font-size: 0.88rem !important; color: #1f2328 !important; }
 
-    /* ── Horizontal rule ── */
-    hr { border-color: rgba(255,255,255,0.07) !important; margin: 1.75rem 0 !important; }
+    /* Horizontal rule */
+    hr { border-color: #e2e5e9 !important; margin: 1.6rem 0 !important; }
 
     /* Spacer util */
     .sp { height: 1rem; }
-    .sp2 { height: 2rem; }
+    .sp2 { height: 1.75rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -555,13 +452,18 @@ if "roadmap" not in st.session_state:
 
 # ── Shared nav bar ──
 def render_nav(show_user=None):
-    st.markdown(
-        f"""<div class="nav-bar">
-            <span class="nav-logo">Path<span>wise</span></span>
-            <span class="nav-pill">{'👤 ' + show_user if show_user else 'Adaptive Learning'}</span>
-        </div>""",
-        unsafe_allow_html=True,
-    )
+    if show_user:
+        _, right = st.columns([6, 1])
+        with right:
+            st.markdown('<div class="danger-btn">', unsafe_allow_html=True)
+            if st.button("Sign out", key="nav_signout_btn"):
+                st.session_state.user = None
+                st.session_state.page = "dashboard"
+                st.session_state.assessment_questions = None
+                st.session_state.assessment_report = None
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="nav-divider"></div>', unsafe_allow_html=True)
 
 
 # ============================================================
@@ -572,19 +474,10 @@ def render_nav(show_user=None):
 # AUTH
 # ──────────────────────────────────────────────────────────────
 if st.session_state.user is None:
-    render_nav()
 
     st.markdown("""
     <div class="hero-wrap">
-        <span class="hero-eyebrow">✦ AI-powered career growth</span>
-        <h1 class="hero-title">
-            Master your next role<br>
-            <em>faster than ever.</em>
-        </h1>
-        <p class="hero-sub">
-            Adaptive assessments, personalized learning paths, and real-time skill tracking
-            — all built around your goals.
-        </p>
+        <h1 class="hero-title">Adaptive Learning Pathway</h1>
     </div>
     """, unsafe_allow_html=True)
 
@@ -656,10 +549,10 @@ elif st.session_state.page == "assessment":
 
     st.markdown(
         f"""<div class="assessment-header">
-            <span class="greeting-eyebrow">📋 Assessment</span>
+            <span class="greeting-eyebrow">Assessment</span>
             <h1 class="greeting-title">Skill Evaluation</h1>
             <p class="greeting-sub">
-                Questions tailored for <strong style="color:#e8eaf0;">{user[4]}</strong>
+                Questions tailored for <strong style="color:#2c5f8a;">{user[4]}</strong>
                 — answer honestly for the most accurate roadmap.
             </p>
         </div>""",
@@ -714,8 +607,9 @@ elif st.session_state.page == "assessment":
         st.radio(
             "Select answer",
             list(q["options"].keys()),
-            format_func=lambda x, q=q: f"{x}.  {q['options'][x]}",
+            format_func=lambda x, q=q: f"{x}. {q['options'][x]}",
             key=f"question_{i}",
+            index=None,  # No option selected initially
             label_visibility="collapsed",
         )
         st.markdown("</div>", unsafe_allow_html=True)
@@ -726,14 +620,24 @@ elif st.session_state.page == "assessment":
     with c1:
         if st.button("Submit assessment →"):
 
+            unanswered = []
+
+            for i in range(total):
+                if st.session_state.get(f"question_{i}") is None:
+                    unanswered.append(i + 1)
+
+            if unanswered:
+                st.error(
+                    f"Please answer all questions before submitting. Missing: {', '.join(map(str, unanswered))}"
+                )
+                st.stop()
+
             for i, q in enumerate(questions["questions"]):
                 q["user answer"] = st.session_state.get(
                     f"question_{i}"
                 )
 
-            report = skill_gap(
-                questions
-            )
+            report = skill_gap(questions)
 
             save_assessment_result(
                 user[0],
@@ -741,9 +645,7 @@ elif st.session_state.page == "assessment":
             )
 
             st.session_state.assessment_report = report
-
             st.session_state.page = "report"
-
             st.rerun()
     with c2:
         st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
@@ -767,7 +669,7 @@ elif st.session_state.page == "report":
 
     st.markdown(
         f"""<div class="report-header">
-            <span class="greeting-eyebrow">📊 Results</span>
+            <span class="greeting-eyebrow">Results</span>
             <h1 class="greeting-title">Assessment Report</h1>
             <p class="greeting-sub">Here's how your skills stack up for {user[4]}.</p>
         </div>""",
@@ -783,11 +685,11 @@ elif st.session_state.page == "report":
             </div>
             <div style="flex:1; display:flex; flex-direction:column; gap:.5rem;">
                 <div>
-                    <span class="result-badge badge-strong">✓ {len(strong)} strong skills</span>
+                    <span class="result-badge badge-strong">{len(strong)} strong skills</span>
                     &nbsp;
-                    <span class="result-badge badge-weak">⚠ {len(weak)} need work</span>
+                    <span class="result-badge badge-weak">{len(weak)} need work</span>
                 </div>
-                <div style="font-size:0.85rem; color:#475569;">
+                <div style="font-size:0.85rem; color:#57606a;">
                     {len(report)} skills assessed across your target role requirements.
                 </div>
             </div>
@@ -831,7 +733,7 @@ elif st.session_state.page == "report":
             )
             st.markdown(f'<div class="chip-wrap">{items_html}</div>', unsafe_allow_html=True)
         else:
-            st.markdown("<p style='color:#475569;font-size:0.88rem;'>Keep practicing — no strong areas yet.</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#57606a;font-size:0.88rem;'>Keep practicing — no strong areas yet.</p>", unsafe_allow_html=True)
 
     with col_w:
         st.markdown('<div class="section-hd">Needs Improvement</div>', unsafe_allow_html=True)
@@ -841,7 +743,7 @@ elif st.session_state.page == "report":
             )
             st.markdown(f'<div class="chip-wrap">{items_html}</div>', unsafe_allow_html=True)
         else:
-            st.markdown("<p style='color:#6ee7b7;font-size:0.88rem;'>Excellent — no weak areas found!</p>", unsafe_allow_html=True)
+            st.markdown("<p style='color:#2f7a3c;font-size:0.88rem;'>Excellent — no weak areas found!</p>", unsafe_allow_html=True)
 
     st.markdown("<div class='sp2'></div>", unsafe_allow_html=True)
     a1, a2, a3 = st.columns([1.2, 1.2, 1])
@@ -919,7 +821,7 @@ elif st.session_state.page == "roadmap":
     )
 
     st.title(
-        "📚 Personalized Learning Roadmap"
+        "Personalized Learning Roadmap"
     )
 
     if roadmap is None:
@@ -957,7 +859,7 @@ elif st.session_state.page == "roadmap":
         for week_no in sorted(weeks.keys()):
 
             st.markdown(
-                f"## 📅 Week {week_no}"
+                f"## Week {week_no}"
             )
 
             for item in weeks[week_no]:
@@ -983,7 +885,7 @@ elif st.session_state.page == "roadmap":
     with c1:
 
         if st.button(
-            "🔄 Retake Assessment"
+            "Retake Assessment"
         ):
 
             st.session_state.assessment_questions = None
@@ -997,7 +899,7 @@ elif st.session_state.page == "roadmap":
     with c2:
 
         if st.button(
-            "🏠 Back To Dashboard"
+            "Back To Dashboard"
         ):
 
             st.session_state.page = "dashboard"
@@ -1013,7 +915,7 @@ elif st.session_state.page == "job_ready":
     st.balloons()
 
     st.success(
-        "🎉 Congratulations!"
+        "Congratulations!"
     )
 
     st.markdown(
@@ -1037,7 +939,7 @@ Recommended next steps:
     )
 
     if st.button(
-        "🏠 Back To Dashboard"
+        "Back To Dashboard"
     ):
 
         st.session_state.page = "dashboard"
@@ -1061,10 +963,10 @@ else:
     # Dashboard header
     st.markdown(
         f"""<div class="dashboard-header">
-            <div class="greeting-eyebrow">👋 Good to see you</div>
+            <div class="greeting-eyebrow">Good to see you</div>
             <h1 class="greeting-title">{user[1].split()[0]}'s Learning Hub</h1>
             <p class="greeting-sub">
-                Working toward <strong style="color:#e8eaf0;">{user[4]}</strong>
+                Working toward <strong style="color:#2c5f8a;">{user[4]}</strong>
                 &nbsp;·&nbsp; {user[5]} timeline
             </p>
         </div>""",
@@ -1100,7 +1002,7 @@ else:
         chips_html = "".join(f'<span class="chip">{s}</span>' for s in skills)
         st.markdown(f'<div class="chip-wrap">{chips_html}</div>', unsafe_allow_html=True)
     else:
-        st.markdown("<p style='color:#475569;font-size:0.88rem;'>No skills added yet. Edit your profile to add some.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#57606a;font-size:0.88rem;'>No skills added yet. Edit your profile to add some.</p>", unsafe_allow_html=True)
 
     # Tools
     st.markdown('<div class="section-hd">Tools & Technologies</div>', unsafe_allow_html=True)
@@ -1108,7 +1010,7 @@ else:
         chips_html = "".join(f'<span class="chip tool">{t}</span>' for t in tools)
         st.markdown(f'<div class="chip-wrap">{chips_html}</div>', unsafe_allow_html=True)
     else:
-        st.markdown("<p style='color:#475569;font-size:0.88rem;'>No tools added yet.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#57606a;font-size:0.88rem;'>No tools added yet.</p>", unsafe_allow_html=True)
 
     # Assessment History
 # Assessment History
@@ -1156,7 +1058,7 @@ else:
             with col1:
 
                 st.info(
-                    f"📋 Assessment #{attempt_no}\n\n{status}"
+                    f"Assessment #{attempt_no}\n\n{status}"
                 )
 
             with col2:
@@ -1176,7 +1078,6 @@ else:
     st.markdown(
         """<div class="cta-row">
             <div class="cta-card" id="start-assessment">
-                <span class="cta-card-icon">🎯</span>
                 <div class="cta-card-title">Start Assessment</div>
                 <div class="cta-card-desc">
                     Take an adaptive skill evaluation to find your gaps and strengths
@@ -1184,7 +1085,6 @@ else:
                 </div>
             </div>
             <div class="cta-card" id="view-roadmap">
-                <span class="cta-card-icon">🗺️</span>
                 <div class="cta-card-title">View Learning Roadmap</div>
                 <div class="cta-card-desc">
                     Get a personalized study plan with curated resources to close skill gaps
@@ -1196,7 +1096,7 @@ else:
     )
 
     st.markdown("<div class='sp2'></div>", unsafe_allow_html=True)
-    b1, b2, _ = st.columns([1, 1, 2])
+    b1, _ = st.columns([1, 3])
     with b1:
 
         if saved_roadmap:
@@ -1216,12 +1116,3 @@ else:
                 st.session_state.page = "assessment"
 
                 st.rerun()
-    with b2:
-        st.markdown('<div class="danger-btn">', unsafe_allow_html=True)
-        if st.button("Sign out"):
-            st.session_state.user = None
-            st.session_state.page = "dashboard"
-            st.session_state.assessment_questions = None
-            st.session_state.assessment_report    = None
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
