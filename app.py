@@ -1,15 +1,7 @@
 import streamlit as st
 from login import (login_user, register_user, save_assessment_result, get_assessment_history, save_roadmap, get_latest_roadmap)
 from fetch_content import content_generation
-from assessment import call_gemini
-
-from assessment import (
-    load_roles,
-    match_role,
-    build_difficulty_map,
-    generate_mcqs,
-    skill_gap,
-)
+from assessment import (call_gemini,filter_relevant_skills,load_roles,match_role,build_difficulty_map,generate_mcqs,skill_gap,find_missing_required_skills)
 
 from google import genai
 from dotenv import load_dotenv
@@ -449,6 +441,8 @@ if "assessment_report" not in st.session_state:
     st.session_state.assessment_report = None
 if "roadmap" not in st.session_state:
     st.session_state.roadmap = None
+if "retake_mode" not in st.session_state:
+    st.session_state.retake_mode = False
 
 # ── Shared nav bar ──
 def render_nav(show_user=None):
@@ -521,7 +515,7 @@ if st.session_state.user is None:
             else:
                 st.error("That email already has an account.")
 
-    else:  # Login
+    else:  
         st.markdown('<p class="auth-card-title">Welcome back</p>', unsafe_allow_html=True)
         st.markdown('<p class="auth-card-sub">Sign in to continue your learning path.</p>', unsafe_allow_html=True)
 
@@ -564,25 +558,45 @@ elif st.session_state.page == "assessment":
             client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
             roles     = load_roles()
             role_name = match_role(user[4], roles)
-            role_data = roles.get(role_name)
+            
+        if not st.session_state.retake_mode:
+                skills_list = []
+                userskills = user[7]
+                if isinstance(userskills, str):
+                    userskills = [userskills]
+                if user[8]:
+                    userskills.append(user[8])
+                flat_skills = []
+                for s in userskills:
+                    if isinstance(s, str):
+                        flat_skills.extend([x.strip() for x in s.split(",") if x.strip()])
+                    else:
+                        flat_skills.append(s)
 
-            skills_list = []
-            if role_data:
-                skills_list.extend(role_data["required"])
-                skills_list.extend(role_data["preferred"])
-
-            payload = {
-                "skills": list(set(skills_list)),
-                "difficulty": ["easy", "medium"],
+                userskills = flat_skills
+                role_data = roles.get(role_name)
+                skills_list=filter_relevant_skills(userskills,role_data)
+                payload = {
+                    "skills": list(set(skills_list)),
+                    "difficulty": build_difficulty_map(user[6]),
             }
-            st.session_state.assessment_questions = generate_mcqs(
-                client, payload, role_name
-            )
-
+        else:
+            roadmap = get_latest_roadmap(user[0])
+            skills_list = [
+                item["skill"]
+                for item in roadmap["learning_path"]
+                if "skill" in item
+            ]
+            payload = {
+                    "skills": list(set(skills_list)),
+                    "difficulty":['medium','hard'],
+            }        
+        st.session_state.assessment_questions = generate_mcqs(
+                    client, payload, role_name
+            ) 
     questions = st.session_state.assessment_questions
     total = len(questions["questions"])
 
-    # Compute how many have been answered (for progress bar)
     answered = sum(
         1 for i in range(total)
         if st.session_state.get(f"question_{i}")
@@ -609,7 +623,7 @@ elif st.session_state.page == "assessment":
             list(q["options"].keys()),
             format_func=lambda x, q=q: f"{x}. {q['options'][x]}",
             key=f"question_{i}",
-            index=None,  # No option selected initially
+            index=None,
             label_visibility="collapsed",
         )
         st.markdown("</div>", unsafe_allow_html=True)
@@ -697,7 +711,6 @@ elif st.session_state.page == "report":
         unsafe_allow_html=True,
     )
 
-    # Skill breakdown
     st.markdown('<div class="section-hd">Skill Breakdown</div>', unsafe_allow_html=True)
 
     for skill, score in sorted(report.items(), key=lambda x: -x[1]):
@@ -721,7 +734,6 @@ elif st.session_state.page == "report":
             unsafe_allow_html=True,
         )
 
-    # Strengths / Weaknesses
     st.markdown("<div class='sp'></div>", unsafe_allow_html=True)
     col_s, col_w = st.columns(2)
 
@@ -753,13 +765,27 @@ elif st.session_state.page == "report":
             with st.spinner(
                 "Generating roadmap..."
             ):
+                missing_skills=[]   
+                if not st.session_state.retake_mode:
+                    mode='initial'
+                    roles = load_roles()
+                    role_name = match_role(user[4], roles)
+                    role_data = roles.get(role_name)
 
+                    user_skills = user[7].split(",") if user[7] else []
+                    user_tools = user[8].split(",") if user[8] else []
+                    all_user_skills = user_skills + user_tools
+                    missing_skills = find_missing_required_skills(all_user_skills, role_data)
+                
+                else:
+                    missing_skills=[]    
+                    mode='reassessment'
                 roadmap_prompt = content_generation(
                     {
                         "target_role": user[4],
                         "timelines": user[5]
                     },
-                    st.session_state.assessment_report
+                    st.session_state.assessment_report, missing_skills, mode
                 )
 
                 client = genai.Client(
@@ -784,7 +810,6 @@ elif st.session_state.page == "report":
 
                 st.session_state.roadmap = roadmap
 
-                # SAVE ROADMAP TO DATABASE
                 save_roadmap(
                     user[0],
                     roadmap
@@ -803,7 +828,7 @@ elif st.session_state.page == "report":
         st.markdown('<div class="danger-btn">', unsafe_allow_html=True)
         if st.button("Retake assessment"):
             st.session_state.assessment_questions = None
-            st.session_state.assessment_report    = None
+           # st.session_state.assessment_report    = None
             st.session_state.page = "assessment"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -814,7 +839,6 @@ elif st.session_state.page == "report":
 
 elif st.session_state.page == "roadmap":
 
-    #roadmap = st.session_state.roadmap
     roadmap = st.session_state.get(
         "roadmap",
         None
@@ -837,14 +861,12 @@ elif st.session_state.page == "roadmap":
         )
 
         weeks = {}
-
+        st.info(f"Why you're learning this:\n{roadmap["reason"]}")
         for skill in roadmap["learning_path"]:
-
             if "weekly_plan" not in skill:
                 continue
 
             for week in skill["weekly_plan"]:
-
                 wk = week["week"]
 
                 if wk not in weeks:
@@ -855,7 +877,6 @@ elif st.session_state.page == "roadmap":
                     "focus": week["focus"],
                     "tasks": week["TASK"]
                 })
-
         for week_no in sorted(weeks.keys()):
 
             st.markdown(
@@ -887,13 +908,10 @@ elif st.session_state.page == "roadmap":
         if st.button(
             "Retake Assessment"
         ):
-
             st.session_state.assessment_questions = None
-
             st.session_state.assessment_report = None
-
+            st.session_state.retake_mode = True
             st.session_state.page = "assessment"
-
             st.rerun()
 
     with c2:
@@ -901,9 +919,7 @@ elif st.session_state.page == "roadmap":
         if st.button(
             "Back To Dashboard"
         ):
-
             st.session_state.page = "dashboard"
-
             st.rerun()
 
 # ─────────────────────────────

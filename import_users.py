@@ -24,7 +24,7 @@ for _, row in df.iterrows():
         + "@gmail.com"
     )
 
-    password = "1234"
+    password = "*******"
 
     role = row["What IT role are you targeting?"]
 
