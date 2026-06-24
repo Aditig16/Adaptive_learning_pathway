@@ -12,7 +12,6 @@ youtube_api_key = os.getenv("YOUTUBE_API_KEY")
 youtube = build("youtube", "v3", developerKey=youtube_api_key)
 
 
-#MAX_VIDEOS_PER_SKILL = 3
 MAX_VIDEOS_PER_SKILL = 1
 MAX_TITLE_LEN = 80
 MAX_DESC_LEN = 120
@@ -20,55 +19,47 @@ TOKEN_LIMIT_SOFT = 12000
 
 TIMELINE_MAP = {
     "1-3 months": 8,
-    "3–6 months": 12,
-    "6–12 months": 20,
+    "3-6 months": 12,
+    "6-12 months": 20,
     "< 1 months": 3,
     "1+ year": 24
 }
-#def content_generation(user):
-#    skills=load_skills()
-#    weak_skills_score=calculate_weak_skills(skills)
-def content_generation(user, assessment_report):
+
+def content_generation(user, assessment_report,missing_skills, mode):
     weak_skills_score = calculate_weak_skills(
         assessment_report
     )
+    all_skills = {}
+    for skill, score in weak_skills_score.items():
+        all_skills[skill] = {
+        "score": score,
+        "attempted": True
+    }
+    if missing_skills:
+        for skill in missing_skills:
+            if skill not in all_skills:
+                all_skills[skill] = {
+                "score": 0,
+                "attempted":False
+            }
     roadmap={}
-    for skill,score in weak_skills_score.items():
+    for skill,score in all_skills.items():
         videos = fetch_youtube_videos(skill)
         roadmap[skill] = {
             "score": score,
             "videos": videos
         }
-    prompt=build_prompt(user['target_role'],TIMELINE_MAP.get(str(user['timelines']).strip(), 8), roadmap)
+    prompt=build_prompt(user['target_role'],TIMELINE_MAP.get(str(user['timelines']).strip(), 8), roadmap, mode)
     return prompt
     
-#def calculate_weak_skills(gap):
-#    weak_skills_scores={}
-#    for skill, score in gap.items():
-#        if(score<75):
-#            weak_skills_scores[skill]=score        
-#    return weak_skills_scores
-
 def calculate_weak_skills(gap):
+   weak_skills_scores={}
+   for skill, score in gap.items():
+       if(score<75):
+           weak_skills_scores[skill]=score        
+   return weak_skills_scores
 
-    weak_skills_scores = {}
-
-    count = 0
-
-    for skill, score in gap.items():
-
-        if score < 75:
-
-            weak_skills_scores[skill] = score
-
-            count += 1
-
-            if count == 2:
-                break
-
-    return weak_skills_scores
-
-def fetch_youtube_videos(skill,maxResults=3):
+def fetch_youtube_videos(skill,maxResults=1):
     request = youtube.search().list(
         q=f"{skill} tutorial",
         part="snippet",
@@ -86,9 +77,7 @@ def fetch_youtube_videos(skill,maxResults=3):
         })
     return videos
 
-##############################################
-    # TO DO : Should load weak skills from DB
-##############################################  
+
      
 def load_skills(path="weak_skills.json"):
     with open(path, "r") as f:
@@ -145,7 +134,7 @@ def compress_data(weak_skills_data):
     return compressed
 
 
-def build_prompt(role, timeline_weeks, weak_skills_data):
+def build_prompt(role, timeline_weeks, weak_skills_data, mode):
     """
     timeline_weeks → user goal duration (VERY IMPORTANT CONTROL SIGNAL)
     """
@@ -164,65 +153,81 @@ You are an expert adaptive learning system.
 INPUT JSON:
 {json.dumps(payload, indent=2)}
 
-────────────────────────
-TASK:
-────────────────────────
 
-────────────────────
-STRICT RULES:
-────────────────────
-1. timeline_weeks is FIXED = {timeline_weeks}
-2. Create ONE unified learning plan across ALL skills
-3. Weeks MUST be sequential from 1 to {timeline_weeks}
-4. DO NOT skip, merge, or add extra weeks
-5. DO NOT create separate timelines per skill
+TASK:-
 
-────────────────────
-CRITICAL RESOURCE RULE:
-────────────────────
+STRICT RULES:-
+
+WEEK STRUCTURE RULES:-
+
+- Weeks are fixed from 1 to timeline_weeks
+- Each week must contain at least 1 TASK
+- Tasks must be distributed evenly across all weeks
+- A week may contain multiple skills and multiple tasks
+- Avoid clustering too much content in early weeks
+- Ensure no week is empty or overloaded
+
+MODE:-
+If mode = "initial":
+- Assume user is starting fresh
+- Teach from fundamentals => advanced
+- Build complete progression for all skills
+
+If mode = "reassessment":
+- User already followed a previous roadmap
+- DO NOT restart basics unless score < 30
+
+SKILL RULES:-
+Each skill has:
+- attempted (boolean)
+- score (0-100)
+
+If attempted = False:
+- no prior knowledge => teach basics first (foundation)
+
+If attempted = True:
+- some knowledge => focus on gaps, reinforcement and improvement
+
+CRITICAL RESOURCE RULE:-
+
 - Each skill contains "videos" with URLs
 - You MUST use ONLY these provided videos
 - DO NOT generate new links
 - Every week MUST include at least 1 video link from input
 
-────────────────────
-TASK RULES:
-────────────────────
+TASK RULES:-
+
 - tasks MUST include video links inside text
 - format each task like:
   "Watch: TITLE (URL)"
 - do NOT separate links into another field
 
-────────────────────
-OTHER RULES
-────────────────────
+OTHER RULES:-
 
 1. Adjust learning depth based on timeline:
-   - short timeline → focus only fundamentals
-   - medium timeline → balanced theory + practice
-   - long timeline → deep mastery + projects
-
+   - short timeline => focus only fundamentals
+   - medium timeline => balanced theory + practice
+   - long timeline => deep mastery + projects
 2. Summarize provided learning resources briefly
-3. The reason should explain why the user is suggested to learn the skill, based on the score he received
-4. RESOURCE SUMMARY Should briefly summarize the contents of the videos using the descriptions provided
+3. RESOURCE SUMMARY Should briefly summarize the contents of the videos using the descriptions provided
 
-────────────────────────
-OUTPUT RULES:
-────────────────────────
+
+OUTPUT RULES:-
+
 - Return ONLY valid JSON
 - Keep explanation short
 - No markdown
 - No extra text
 
-────────────────────────
-OUTPUT FORMAT:
-────────────────────────
+
+OUTPUT FORMAT:-
+
 {{
   "timeline_weeks": {timeline_weeks},
+  "reason": ""3-4 line summary of overall skill gaps"",
   "learning_path": [
     {{
       "skill": "",
-      "reason": "",
       "resource_summary": "",
       "weekly_plan": [
         {{

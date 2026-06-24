@@ -9,7 +9,6 @@ import openpyxl
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-#from fetch_content import content_generation
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -44,13 +43,21 @@ SKILL_ALIASES = {
     
 }
 NOISE = {
-    "student", "bachelor’s", "master’s", "phd",
+    "student", "bachelor's", "master's", "phd",
     "no experience(0)", "no experience",
     "get first job", "internship preparation",
     "working professional", "career switch",
     "outlook notes:", "column", "timestamp"
 }
-
+IGNORE_SKILLS = {
+    "programming",
+    "cloud platforms",
+    "version control",
+    "development tools",
+    "tools",
+    "databases",
+    "frameworks"
+}
 def clean(v):
     if v is None:
         return None
@@ -92,7 +99,6 @@ def normalize_skill(s):
         return None
 
     return s
-
 
 def flatten_user_skills(row_dict):
     skills = []
@@ -197,11 +203,11 @@ def parse_experience(exp):
 
     if "fresher" in exp or "no experience" in exp or "0" in exp:
         return 0
-    if "1" in exp or "1-2" in exp or "1–2" in exp:
+    if "1" in exp or "1-2" in exp or "1-2" in exp:
         return 1
-    if "2" in exp or "2-4" in exp or "2–4" in exp:
+    if "2" in exp or "2-4" in exp or "2-4" in exp:
         return 2
-    if "3" in exp or "3-5" in exp or "3–5" in exp:
+    if "3" in exp or "3-5" in exp or "3-5" in exp:
         return 3
 
     return 1
@@ -241,12 +247,11 @@ def filter_relevant_skills(user_skills, role_data):
     if not role_data:
         return user_skills
 
-    role_skills = set(
-        (role_data.get("required") or []) +
-        (role_data.get("preferred") or []) +
-        (role_data.get("tools") or [])
+    role_skills = clean_role_skill_list(
+    (role_data.get("required") or []) +
+    (role_data.get("preferred") or []) +
+    (role_data.get("tools") or [])
     )
-
     filtered = []
 
     for s in user_skills:
@@ -259,11 +264,11 @@ def filter_relevant_skills(user_skills, role_data):
 
 
 def build_difficulty_map(experience_level):
-    if experience_level == 0:
-        return ["easy"]          # only easy
-    elif experience_level == 1:
+    if experience_level == '0' or experience_level=='Fresher':
+        return ["easy"]          
+    elif experience_level <= '1':
         return ["easy", "medium"]
-    elif experience_level == 2:
+    elif experience_level <= '2':
         return ["medium", "hard"]
     else:
         return ["easy", "medium", "hard"]
@@ -347,7 +352,19 @@ def skill_gap(result):
             score_per_skill[skill]["correct"]+=1
     
     return calculate_percentage(score_per_skill)        
-        
+def normalize(s: str):
+    if not s:
+        return ""
+
+    s = s.lower().strip()
+
+    s = s.replace("&", "and")
+    s = s.replace("/", " ")
+    s = s.replace("-", " ")
+
+    s = " ".join(s.split())
+
+    return s        
 def calculate_percentage(scores):
     percent={}
     for skill, score in scores.items():
@@ -364,7 +381,7 @@ def expand_skill(skill):
 
     skill = str(skill).strip()
 
-    skill = skill.replace("’", "'")
+    skill = skill.replace("'", "'")
     match = re.match(r"^(.*?)\((.*?)\)\s*$", skill)
 
     if match:
@@ -388,8 +405,26 @@ def get_all_role_skills(role_data):
         for skill in role_data.get(category, []):
             skills.extend(expand_skill(skill))
 
-    return list(dict.fromkeys(skills))
+    cleaned = clean_role_skill_list(skills)
+    return cleaned
 
+def clean_role_skill_list(skills):
+    cleaned = []
+
+    for s in skills:
+        if not s:
+            continue
+
+        norm = normalize_skill(s)
+        if not norm:
+            continue
+
+        if norm.lower() in IGNORE_SKILLS:
+            continue
+
+        cleaned.append(norm)
+
+    return list(dict.fromkeys(cleaned))
 def normalize_for_match(s):
     if not s:
         return None
@@ -432,96 +467,90 @@ def find_missing_required_skills(user_skills, role_data):
             
     return list(dict.fromkeys(missing))
                 
-def main():
-    print("\n Adaptive Learning System\n")
+# def main():
+#      print("\n Adaptive Learning System\n")
 
-    load_dotenv()
-    api_key = os.getenv("GEMINI_API_KEY")
+#     # load_dotenv()
+#     # api_key = os.getenv("GEMINI_API_KEY")
 
-    if not api_key:
-        print("Missing API key")
-        return
+#     # if not api_key:
+#     #     print("Missing API key")
+#     #     return
 
-    client = genai.Client(api_key=api_key)
+#     # client = genai.Client(api_key=api_key)
 
-    users = load_users()
-    roles = load_roles()
+#     # users = load_users()
+#     # roles = load_roles()
 
-    for u in users:
-        print(f"[{u['id']}] {u['name']} → {u['target_role']}")
+#     # for u in users:
+#     #     print(f"[{u['id']}] {u['name']} → {u['target_role']}")
 
-    choice = int(input("\nSelect user ID: "))
-    user = users[choice - 1]
+#     # choice = int(input("\nSelect user ID: "))
+#     # user = users[choice - 1]
 
-    role_name = match_role(user["target_role"], roles)
-    role_data = roles.get(role_name)
+#     # role_name = match_role(user["target_role"], roles)
+#     # role_data = roles.get(role_name)
 
-    user_skills = flatten_user_skills(user["raw_row"])
+#     # user_skills = flatten_user_skills(user["raw_row"])
 
-    aligned = align_skills(user_skills, role_data)
+#     # aligned = align_skills(user_skills, role_data)
 
-    filtered_skills = filter_relevant_skills(aligned, role_data)
-    missing_required_skills = find_missing_required_skills(
-    user_skills,
-    role_data
-    )
-    experience = parse_experience(
-        user["raw_row"].get("Experience in Target Role")
-    )
-    difficulty = build_difficulty_map(experience)
+#     # filtered_skills = filter_relevant_skills(aligned, role_data)
+#     # missing_required_skills = find_missing_required_skills(
+#     # user_skills,
+#     # role_data
+#     # )
+#     # experience = parse_experience(
+#     #     user["raw_row"].get("Experience in Target Role")
+#     # )
+#     # difficulty = build_difficulty_map(experience)
 
-    print("\nSelected:", user["name"])
-    print("Role:", role_name)
-    print("Skills:", filtered_skills)
+#     # print("\nSelected:", user["name"])
+#     # print("Role:", role_name)
+#     # print("Skills:", filtered_skills)
 
-    result = generate_mcqs(
-        client,
-        {"skills": filtered_skills, "difficulty": difficulty},
-        role_name
-    )
+#     # result = generate_mcqs(
+#     #     client,
+#     #     {"skills": filtered_skills, "difficulty": difficulty},
+#     #     role_name
+#     # )
 
-    if not result:
-        print("API failed")
-        return
+#     # if not result:
+#     #     print("API failed")
+#     #     return
 
-    for q in result.get("questions", []):
-        print(f"\n{q['skill']} ({q['difficulty']})")
-        print(q["question"])
-        for k, v in q["options"].items():
-            print(f"{k}. {v}")
-        q['user answer']= input(
-            "Your answer: "
-        )
-    #####################################################
-    # TO DO: Store assessment questions and answers in DB 
-    #####################################################
+#     # for q in result.get("questions", []):
+#     #     print(f"\n{q['skill']} ({q['difficulty']})")
+#     #     print(q["question"])
+#     #     for k, v in q["options"].items():
+#     #         print(f"{k}. {v}")
+#     #     q['user answer']= input(
+#     #         "Your answer: "
+#     #     )
     
-    with open("results.json", "w") as f:
-        json.dump(result, f, indent=2)
-    print("\nDone → results.json saved")    
-    skill_gap_computation = skill_gap(result)  
+#     # with open("results.json", "w") as f:
+#     #     json.dump(result, f, indent=2)
+#     # print("\nDone → results.json saved")    
+#     # skill_gap_computation = skill_gap(result)  
     
-    ############################################
-    # TO DO: Store skill gap, weak skills in DB 
-    ############################################
-    
-    with open("weak_skills.json", "w") as f:
-        json.dump(skill_gap_computation, f, indent=2)
-    #pathway_prompt = content_generation(user)
-    #pathway=call_gemini(client, pathway_prompt)
-    #print("*************************** PATHWAY *************************************")
-    #print("timeline:", pathway['timeline_weeks'], 'weeks')
-    #for content in pathway['learning_path']:
-    #    print("SKILL :-  \n",content['skill'])
-    #    print("REASON : - \n",content['reason'])
-    #    print("RESOURCE SUMMARY - \n", content['resource_summary'])
-    #    print("WEEKLY PLAN \n")
-    #    for week in content['weekly_plan']:
-    #        print("WEEK -", week['week'])
-    #        print("FOCUS - ", week['focus'])
-    #        print("TASKS - \n", week['TASK'])
+
+#     # with open("weak_skills.json", "w") as f:
+#     #     json.dump(skill_gap_computation, f, indent=2)
+#     # #pathway_prompt = content_generation(user)
+#     #pathway=call_gemini(client, pathway_prompt)
+#     #print("*************************** PATHWAY *************************************")
+#     #print("timeline:", pathway['timeline_weeks'], 'weeks')
+#     #for content in pathway['learning_path']:
+#     #    print("SKILL :-  \n",content['skill'])
+#     #    print("REASON : - \n",content['reason'])
+#     #    print("RESOURCE SUMMARY - \n", content['resource_summary'])
+#     #    print("WEEKLY PLAN \n")
+#     #    for week in content['weekly_plan']:
+#     #        print("WEEK -", week['week'])
+#     #        print("FOCUS - ", week['focus'])
+#     #        print("TASKS - \n", week['TASK'])
 
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
