@@ -12,8 +12,8 @@ load_dotenv()
 
 # ---------- Page config ----------
 st.set_page_config(
-    page_title="Pathwise · Adaptive Learning",
-    page_icon="P",
+    page_title="Adaptive Learning Pathway",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -443,7 +443,8 @@ if "roadmap" not in st.session_state:
     st.session_state.roadmap = None
 if "retake_mode" not in st.session_state:
     st.session_state.retake_mode = False
-
+if "job_ready" not in st.session_state:
+    st.session_state.job_ready= None
 # ── Shared nav bar ──
 def render_nav(show_user=None):
     if show_user:
@@ -507,7 +508,7 @@ if st.session_state.user is None:
         )
 
         st.markdown("<div class='sp'></div>", unsafe_allow_html=True)
-        if st.button("Create account →"):
+        if st.button("Create Account"):
             ok = register_user(name, email, password, targetRole,
                                timeline, experience, skills, tools)
             if ok:
@@ -523,7 +524,7 @@ if st.session_state.user is None:
         password = st.text_input("Password", type="password", placeholder="Your password")
 
         st.markdown("<div class='sp'></div>", unsafe_allow_html=True)
-        if st.button("Sign in →"):
+        if st.button("Sign in"):
             user = login_user(email, password)
             if user:
                 st.session_state.user = user
@@ -632,7 +633,7 @@ elif st.session_state.page == "assessment":
 
     c1, c2, _ = st.columns([1.2, 1, 2])
     with c1:
-        if st.button("Submit assessment →"):
+        if st.button("Submit assessment"):
 
             unanswered = []
 
@@ -663,7 +664,7 @@ elif st.session_state.page == "assessment":
             st.rerun()
     with c2:
         st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
-        if st.button("← Back"):
+        if st.button("Back"):
             st.session_state.page = "dashboard"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -760,70 +761,72 @@ elif st.session_state.page == "report":
     st.markdown("<div class='sp2'></div>", unsafe_allow_html=True)
     a1, a2, a3 = st.columns([1.2, 1.2, 1])
     with a1:
-        if st.button("Generate roadmap →"):
-
-            with st.spinner(
+        if avg > 80 and st.session_state.retake_mode:
+            if st.button("Job Readiness"):
+                st.session_state.page = "job_ready"
+                st.rerun()
+        else:
+            if st.button("Generate roadmap"):
+                with st.spinner(
                 "Generating roadmap..."
-            ):
-                missing_skills=[]   
-                if not st.session_state.retake_mode:
-                    mode='initial'
-                    roles = load_roles()
-                    role_name = match_role(user[4], roles)
-                    role_data = roles.get(role_name)
-
-                    user_skills = user[7].split(",") if user[7] else []
-                    user_tools = user[8].split(",") if user[8] else []
-                    all_user_skills = user_skills + user_tools
-                    missing_skills = find_missing_required_skills(all_user_skills, role_data)
+                ):
+                    missing_skills=[]   
+                    if not st.session_state.retake_mode:
+                        mode='initial'
+                        roles = load_roles()
+                        role_name = match_role(user[4], roles)
+                        role_data = roles.get(role_name)
+                        user_skills = user[7].split(",") if user[7] else []
+                        user_tools = user[8].split(",") if user[8] else []
+                        all_user_skills = user_skills + user_tools
+                        missing_skills = find_missing_required_skills(all_user_skills, role_data)
                 
-                else:
-                    missing_skills=[]    
-                    mode='reassessment'
-                roadmap_prompt = content_generation(
-                    {
+                    else:
+                        missing_skills=[]    
+                        mode='reassessment'
+                    roadmap_prompt = content_generation(
+                        {
                         "target_role": user[4],
                         "timelines": user[5]
                     },
                     st.session_state.assessment_report, missing_skills, mode
-                )
+                    )
 
-                client = genai.Client(
+                    client = genai.Client(
                     api_key=os.getenv(
                         "GEMINI_API_KEY"
                     )
-                )
+                    )
 
-                roadmap = call_gemini(
+                    roadmap = call_gemini(
                     client,
                     roadmap_prompt
-                )
-
-                print("ROADMAP =", roadmap)
-
-                if roadmap is None:
-
-                    st.error(
-                        "Roadmap generation failed."
                     )
-                    st.stop()
 
-                st.session_state.roadmap = roadmap
+                    print("ROADMAP =", roadmap)
 
-                save_roadmap(
+                    if roadmap is None:
+                        st.error(
+                        "Roadmap generation failed."
+                        )
+                        st.stop()
+
+                    st.session_state.roadmap = roadmap
+
+                    save_roadmap(
                     user[0],
                     roadmap
-                )
+                    )
 
-                st.session_state.page = "roadmap"
+                    st.session_state.page = "roadmap"
 
-                st.rerun()
-    with a2:
-        st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
-        if st.button("← Back to dashboard"):
-            st.session_state.page = "dashboard"
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+                    st.rerun()
+    # with a2:
+    #     st.markdown('<div class="ghost-btn">', unsafe_allow_html=True)
+    #     if st.button("Back to dashboard"):
+    #         st.session_state.page = "dashboard"
+    #         st.rerun()
+    #     st.markdown("</div>", unsafe_allow_html=True)
     with a3:
         st.markdown('<div class="danger-btn">', unsafe_allow_html=True)
         if st.button("Retake assessment"):
@@ -1028,7 +1031,6 @@ else:
     else:
         st.markdown("<p style='color:#57606a;font-size:0.88rem;'>No tools added yet.</p>", unsafe_allow_html=True)
 
-    # Assessment History
 # Assessment History
 
     st.markdown(
@@ -1117,7 +1119,7 @@ else:
 
         if saved_roadmap:
 
-            if st.button("View Roadmap →"):
+            if st.button("View Roadmap"):
 
                 st.session_state.roadmap = saved_roadmap
 
@@ -1127,7 +1129,7 @@ else:
 
         else:
 
-            if st.button("Start assessment →"):
+            if st.button("Start Assessment"):
 
                 st.session_state.page = "assessment"
 

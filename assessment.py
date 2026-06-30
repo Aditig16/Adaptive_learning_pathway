@@ -56,7 +56,8 @@ IGNORE_SKILLS = {
     "development tools",
     "tools",
     "databases",
-    "frameworks"
+    "frameworks",
+    "Containerization"
 }
 def clean(v):
     if v is None:
@@ -466,7 +467,7 @@ def find_missing_required_skills(user_skills, role_data):
             missing.append(skill)
             
     return list(dict.fromkeys(missing))
-                
+# intial code without UI, output on the terminal                
 # def main():
 #      print("\n Adaptive Learning System\n")
 

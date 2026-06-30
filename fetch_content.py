@@ -144,7 +144,8 @@ def build_prompt(role, timeline_weeks, weak_skills_data, mode):
     payload = {
         "role": role,
         "timeline_weeks": timeline_weeks,
-        "skills": compressed
+        "skills": compressed,
+        "mode":mode
     }
 
     prompt = f"""
